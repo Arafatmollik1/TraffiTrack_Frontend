@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, {useEffect} from "react";
 import ChartOne from "../Charts/ChartOne";
 import ChartThree from "../Charts/ChartThree";
 import ChartTwo from "../Charts/ChartTwo";
@@ -20,6 +20,21 @@ const MapOne = dynamic(() => import("../Maps/MapOne"), {
 });
 
 const ECommerce: React.FC = () => {
+  const [totalCars, setTotalCars] = React.useState(0);
+  const [totalBikes, setTotalBikes] = React.useState(0);
+  const [totalMotorBikes, setTotalMotorBikes] = React.useState(0);
+  const [totalPedestrians, setTotalPedestrians] = React.useState(0);
+  useEffect(() => {
+    fetch('/api/getTotalTrafficData/')
+        .then(response => response.json())
+        .then(data => {
+            setTotalCars(data);
+            console.log('data: ', data);
+        })
+        .catch(error => {
+          console.error('Error fetching data: ', error);
+        });
+  }, []);
   return (
     <>
 
