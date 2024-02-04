@@ -25,9 +25,41 @@ export async function GET() {
 
         // Parse the JSON response
         const data = await response.json();
+        // Initialize counters for each vehicle type
+        let totalCars = 0, totalMotorBikes = 0, totalBikes = 0, totalPedestrians = 0;
+
+        // Process each item in the data.result.data array
+        data.result.data.forEach((item: { class_id: any[]; }) => {
+            const classId = item.class_id[0]; // Assuming class_id is an array, take the first element
+            switch (classId) {
+                case 1:
+                    totalCars += 1;
+                    break;
+                case 2:
+                    totalMotorBikes += 1;
+                    break;
+                case 3:
+                    totalBikes += 1;
+                    break;
+                case 4:
+                    totalPedestrians += 1;
+                    break;
+                default:
+                    // Handle unexpected class_id values, if necessary
+                    break;
+            }
+        });
+
+        // Prepare the result object
+        const result = {
+            totalCars,
+            totalMotorBikes,
+            totalBikes,
+            totalPedestrians,
+        };
 
         // Return the parsed data as the response
-        return new Response(JSON.stringify(data), {
+        return new Response(JSON.stringify(result), {
             status: 200, // OK status
             headers: {
                 'Content-Type': 'application/json',
