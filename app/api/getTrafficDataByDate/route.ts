@@ -1,4 +1,5 @@
-export async function GET() {
+export async function POST(req: Request) {
+    const dateRange = await req.json();
     try {
         // Fetch data from the external API
         const apiUrl = 'https://arafatmollik.online/fundy/api/v2/traffitrack/getdata';
@@ -23,30 +24,37 @@ export async function GET() {
             throw new Error(`Error fetching data: ${response.statusText}`);
         }
 
-        // Parse the JSON response
         const data = await response.json();
-        // Initialize counters for each vehicle type
+        const dateRangeString = JSON.stringify(dateRange.dateRange);
+        const [startDateString, endDateString] = dateRangeString.split(' to ').map(date => date.trim());
+        const moment = require("moment");
+        const startDate = moment(startDateString, "DD-MM-YYYY HH:mm");
+        const endDate = moment(endDateString, "DD-MM-YYYY HH:mm");
         let totalCars = 0, totalMotorBikes = 0, totalBikes = 0, totalPedestrians = 0;
 
-        // Process each item in the data.result.data array
-        data.result.data.forEach((item: { class_id: any[]; }) => {
-            const classId = item.class_id[0]; // Assuming class_id is an array, take the first element
-            switch (classId) {
-                case 1:
-                    totalCars += 1;
-                    break;
-                case 2:
-                    totalMotorBikes += 1;
-                    break;
-                case 3:
-                    totalBikes += 1;
-                    break;
-                case 4:
-                    totalPedestrians += 1;
-                    break;
-                default:
-                    // Handle unexpected class_id values, if necessary
-                    break;
+        data.result.data.forEach((item: { class_id: any[]; time: string; }) => {
+            const itemDate = new Date(item.time);
+
+            // Check if the item's time is within the selected range
+            if (itemDate >= startDate && itemDate <= endDate) {
+                const classId = item.class_id[0]; // Assuming class_id is an array, take the first element
+                switch (classId) {
+                    case 1:
+                        totalCars += 1;
+                        break;
+                    case 2:
+                        totalMotorBikes += 1;
+                        break;
+                    case 3:
+                        totalBikes += 1;
+                        break;
+                    case 4:
+                        totalPedestrians += 1;
+                        break;
+                    default:
+                        // Handle unexpected class_id values, if necessary
+                        break;
+                }
             }
         });
 
