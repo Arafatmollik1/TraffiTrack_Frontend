@@ -30,44 +30,74 @@ export async function POST(req: Request) {
         const moment = require("moment");
         const startDate = moment(startDateString, "DD-MM-YYYY HH:mm");
         const endDate = moment(endDateString, "DD-MM-YYYY HH:mm");
-        let totalCars = 0, totalMotorBikes = 0, totalBikes = 0, totalPedestrians = 0;
+        interface HourlyCount {
+            totalCars: number;
+            totalMotorBikes: number;
+            totalBikes: number;
+            totalPedestrians: number;
+        }
 
-        data.result.data.forEach((item: { class_id: any[]; time: string; }) => {
-            const itemDate = new Date(item.time);
+        interface HourlyCounts {
+            [key: string]: HourlyCount;
+        }
+        let hourlyCounts: HourlyCounts = {};
+        let currentHour = startDate.clone().startOf('hour');
+        while (currentHour <= endDate) {
+            hourlyCounts[currentHour.format("YYYY-MM-DD HH:mm")] = {totalCars: 0, totalMotorBikes: 0, totalBikes: 0, totalPedestrians: 0};
+            currentHour.add(1, 'hours');
+        }
 
-            // Check if the item's time is within the selected range
+        data.result.data.forEach((item: { time: string | number | Date; class_id: any[]; }) => {
+            const itemDate = moment(new Date(item.time));
             if (itemDate >= startDate && itemDate <= endDate) {
                 const classId = item.class_id[0]; // Assuming class_id is an array, take the first element
+                const hourKey = itemDate.clone().startOf('hour').format("YYYY-MM-DD HH:mm");
                 switch (classId) {
                     case 1:
-                        totalCars += 1;
+                        hourlyCounts[hourKey].totalCars += 1;
                         break;
                     case 2:
-                        totalMotorBikes += 1;
+                        hourlyCounts[hourKey].totalMotorBikes += 1;
                         break;
                     case 3:
-                        totalBikes += 1;
+                        hourlyCounts[hourKey].totalBikes += 1;
                         break;
                     case 4:
-                        totalPedestrians += 1;
+                        hourlyCounts[hourKey].totalPedestrians += 1;
                         break;
-                    default:
-                        // Handle unexpected class_id values, if necessary
-                        break;
+                    // Add more cases as needed
                 }
             }
         });
 
-        // Prepare the result object
-        const result = {
-            totalCars,
-            totalMotorBikes,
-            totalBikes,
-            totalPedestrians,
+        // Convert hourlyCounts to the desired stream format
+        let streamOfData = Object.keys(hourlyCounts).map(hour => ({
+            data: [
+                hourlyCounts[hour].totalCars,
+                hourlyCounts[hour].totalMotorBikes,
+                hourlyCounts[hour].totalBikes,
+                hourlyCounts[hour].totalPedestrians
+            ]
+        }));
+
+
+        // Sum up totals from hourlyCounts
+        let totalCount = {
+            totalCars: 0,
+            totalMotorBikes: 0,
+            totalBikes: 0,
+            totalPedestrians: 0,
         };
 
+        Object.values(hourlyCounts).forEach(count => {
+            totalCount.totalCars += count.totalCars;
+            totalCount.totalMotorBikes += count.totalMotorBikes;
+            totalCount.totalBikes += count.totalBikes;
+            totalCount.totalPedestrians += count.totalPedestrians;
+        });
+
         // Return the parsed data as the response
-        return new Response(JSON.stringify(result), {
+        return new Response(JSON.stringify({ totalCount, streamOfData }), {
             status: 200, // OK status
             headers: {
                 'Content-Type': 'application/json',

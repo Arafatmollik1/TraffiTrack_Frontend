@@ -19,6 +19,7 @@ const ECommerce: React.FC = () => {
         totalBikes: 0,
         totalPedestrians: 0,
     });
+    const [dataStream, setDataStream] = useState([] );
 
   useEffect(() => {
     fetch('/api/getTotalTrafficData/')
@@ -56,7 +57,9 @@ const ECommerce: React.FC = () => {
         })
             .then(response => response.json())
             .then(data => {
-                setTrafficData(data);
+                console.log(data);
+                setTrafficData(data.totalCount);
+                setDataStream(data.streamOfData);
             })
             .catch(error => {
                 console.error('Error fetching data: ', error);
@@ -103,7 +106,7 @@ const ECommerce: React.FC = () => {
           </div>
 
           <div className="mt-4 w-full">
-              <ChartOne/>
+              <ChartOne dataStream={dataStream}/>
               <br/>
               <ChartThree/>
 

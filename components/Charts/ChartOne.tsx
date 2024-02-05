@@ -1,7 +1,8 @@
 "use client";
 import { ApexOptions } from "apexcharts";
-import React, { useState } from "react";
+import React, {useEffect, useState} from "react";
 import dynamic from "next/dynamic";
+import {arrayOutputType} from "zod";
 const ReactApexChart = dynamic(() => import("react-apexcharts"), {
   ssr: false,
 });
@@ -124,34 +125,60 @@ const options: ApexOptions = {
   },
 };
 
-interface ChartOneState {
+type ChartOneState = {
   series: {
     name: string;
     data: number[];
   }[];
-}
+};
 
-const ChartOne: React.FC = () => {
-  const [state, setState] = useState<ChartOneState>({
-    series: [
-      {
-        "name": "Cars",
-        "data": [30, 55, 36, 40, 25, 35, 64, 52, 59, 36, 39, 51]
-      },
-      {
-        "name": "Moto Bikes",
-        "data": [23, 11, 22, 27, 13, 22, 37, 21, 44, 22, 30, 45]
-      },
-      {
-        "name": "Bikes",
-        "data": [23, 21, 22, 17, 13, 22, 37, 21, 44, 12, 30, 15]
-      },
-      {
-        "name": "Pedestrians",
-        "data": [13, 11, 22, 27, 23, 22, 17, 21, 34, 22, 10, 45]
-      }
-    ],
-  });
+const initialSeries = [
+  {
+    "name": "Cars",
+    "data": [30, 55, 36, 40, 25, 35, 64, 52, 59, 36, 39, 51]
+  },
+  {
+    "name": "Moto Bikes",
+    "data": [23, 11, 22, 27, 13, 22, 37, 21, 44, 22, 30, 45]
+  },
+  {
+    "name": "Bikes",
+    "data": [23, 21, 22, 17, 13, 22, 37, 21, 44, 12, 30, 15]
+  },
+  {
+    "name": "Pedestrians",
+    "data": [13, 11, 22, 27, 23, 22, 17, 21, 34, 22, 10, 45]
+  }
+];
+
+type ChartOneProps = {
+  dataStream: any[]; // Use the appropriate type for your data items instead of any if possible
+};
+
+// Use the props type in your component definition
+const ChartOne: React.FC<ChartOneProps> = ({ dataStream }) => {
+  const [state, setState] = useState<ChartOneState>({ series: initialSeries });
+
+  useEffect(() => {
+    if (dataStream) {
+      updateSeriesData(dataStream);
+    }
+  }, [dataStream]); // This effect runs whenever dataStream changes
+
+  const updateSeriesData = (newDataStream: { data: number[] }[]) => {
+    // Assuming each entry in newDataStream corresponds to a single update across all categories
+    const updatedSeries = state.series.map((seriesItem, index) => {
+      // Accumulate all updates for this category
+      const newDataPoints = newDataStream.map(update => update.data[index]);
+      return {
+        ...seriesItem,
+        data: [...seriesItem.data, ...newDataPoints] // Append new data points to existing data
+      };
+    });
+
+    // Update state with the new series data
+    setState({ series: updatedSeries });
+  };
 
   const handleReset = () => {
     setState((prevState) => ({
