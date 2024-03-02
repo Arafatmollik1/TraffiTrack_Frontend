@@ -1,21 +1,19 @@
 export async function POST(req: Request) {
-    const dateRange = await req.json();
-    try {
-        // Fetch data from the external API
-        const apiUrl = 'https://arafatmollik.online/fundy/api/v2/traffitrack/getdata';
-        // Your username and password
-        const username = 'user';
-        const password = 'password';
+    const { startDate, endDate } = await req.json();
 
-        // Encode your username and password in base64
-        const base64Credentials = Buffer.from(`${username}:${password}`).toString('base64');
+    try {
+        // Format the dates
+        const fromTime = formatDate(startDate);
+        const toTime = formatDate(endDate);
+
+        // Construct the API URL with query parameters
+        const apiUrl = `http://127.0.0.1:5000/count?from_time=${fromTime}&to_time=${toTime}`;
+
+        // Fetch data from the external API
         const response = await fetch(apiUrl, {
-            method: 'GET',
+            method: 'GET', // GET request does not need a body
             headers: {
-                // If the API requires specific headers, add them here
                 'Content-Type': 'application/json',
-                // Example: 'Authorization': 'Bearer YOUR_API_TOKEN',
-                'Authorization': `Basic ${base64Credentials}`,
             },
         });
 
@@ -24,95 +22,44 @@ export async function POST(req: Request) {
             throw new Error(`Error fetching data: ${response.statusText}`);
         }
 
-        const data = await response.json();
-        const dateRangeString = JSON.stringify(dateRange.dateRange);
-        const [startDateString, endDateString] = dateRangeString.split(' to ').map(date => date.trim());
-        const moment = require("moment");
-        const startDate = moment(startDateString, "DD-MM-YYYY HH:mm");
-        const endDate = moment(endDateString, "DD-MM-YYYY HH:mm");
-        interface HourlyCount {
-            totalCars: number;
-            totalMotorBikes: number;
-            totalBikes: number;
-            totalPedestrians: number;
-        }
+        const data = await response.json(); // Assuming you want to parse the JSON response
 
-        interface HourlyCounts {
-            [key: string]: HourlyCount;
-        }
-        let hourlyCounts: HourlyCounts = {};
-        let currentHour = startDate.clone().startOf('hour');
-        while (currentHour <= endDate) {
-            hourlyCounts[currentHour.format("YYYY-MM-DD HH:mm")] = {totalCars: 0, totalMotorBikes: 0, totalBikes: 0, totalPedestrians: 0};
-            currentHour.add(1, 'hours');
-        }
-
-        data.result.data.forEach((item: { time: string | number | Date; class_id: any[]; }) => {
-            const itemDate = moment(new Date(item.time));
-            if (itemDate >= startDate && itemDate <= endDate) {
-                const classId = item.class_id[0]; // Assuming class_id is an array, take the first element
-                const hourKey = itemDate.clone().startOf('hour').format("YYYY-MM-DD HH:mm");
-                switch (classId) {
-                    case 1:
-                        hourlyCounts[hourKey].totalCars += 1;
-                        break;
-                    case 2:
-                        hourlyCounts[hourKey].totalMotorBikes += 1;
-                        break;
-                    case 3:
-                        hourlyCounts[hourKey].totalBikes += 1;
-                        break;
-                    case 4:
-                        hourlyCounts[hourKey].totalPedestrians += 1;
-                        break;
-                    // Add more cases as needed
-                }
-            }
-        });
-
-        // Convert hourlyCounts to the desired stream format
-        let streamOfData = Object.keys(hourlyCounts).map(hour => ({
-            data: [
-                hourlyCounts[hour].totalCars,
-                hourlyCounts[hour].totalMotorBikes,
-                hourlyCounts[hour].totalBikes,
-                hourlyCounts[hour].totalPedestrians
-            ]
-        }));
+        // Destructure the response data into named variables
+        const [totalPersons, totalBicycles, totalCars, totalMotorBikes, totalBus, totalTrucks] = Object.values(data);
 
 
-        // Sum up totals from hourlyCounts
-        let totalCount = {
-            totalCars: 0,
-            totalMotorBikes: 0,
-            totalBikes: 0,
-            totalPedestrians: 0,
+
+        // Return the results in a modern object shorthand notation
+        const result = {
+            totalPersons,
+            totalBicycles,
+            totalCars,
+            totalMotorBikes,
+            totalBus,
+            totalTrucks,
         };
 
-        Object.values(hourlyCounts).forEach(count => {
-            totalCount.totalCars += count.totalCars;
-            totalCount.totalMotorBikes += count.totalMotorBikes;
-            totalCount.totalBikes += count.totalBikes;
-            totalCount.totalPedestrians += count.totalPedestrians;
-        });
-
         // Return the parsed data as the response
-        return new Response(JSON.stringify({ totalCount, streamOfData }), {
-            status: 200, // OK status
+        return new Response(JSON.stringify(result), {
+            status: 200,
             headers: {
                 'Content-Type': 'application/json',
             },
         });
     } catch (error) {
-        // Handle any errors that occur during the fetch
         console.error('Fetch error:', error);
-
-        // Return an error response
         return new Response(JSON.stringify({ error: 'Failed to fetch data' }), {
-            status: 500, // Internal Server Error status
+            status: 500,
             headers: {
                 'Content-Type': 'application/json',
             },
         });
     }
+}
+
+// Helper function to format dates
+function formatDate(dateStr: { split: (arg0: string) => [any, any, any]; }) {
+    const [day, month, yearTime] = dateStr.split('-');
+    const [year, time] = yearTime.split(' ');
+    return `${year}-${month}-${day}T${time}:00`;
 }

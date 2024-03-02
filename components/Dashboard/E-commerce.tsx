@@ -8,18 +8,21 @@ import FlatpickrCustom from "@/components/Calender/FlatpickrCustom";
 import { FaCar } from "react-icons/fa";
 import { RiMotorbikeFill } from "react-icons/ri";
 import { MdDirectionsBike } from "react-icons/md";
+import { FaBus } from "react-icons/fa6";
+import { LiaTruckSolid } from "react-icons/lia";
 import { IoMdPeople } from "react-icons/io";
 import flatpickr from "flatpickr";
 
 
 const ECommerce: React.FC = () => {
     const [trafficData, setTrafficData] = useState({
+        totalPersons: 0,
+        totalBicycles: 0,
         totalCars: 0,
         totalMotorBikes: 0,
-        totalBikes: 0,
-        totalPedestrians: 0,
+        totalBus: 0,
+        totalTrucks: 0,
     });
-    const [dataStream, setDataStream] = useState([] );
 
   useEffect(() => {
     fetch('/api/getTotalTrafficData/')
@@ -31,39 +34,50 @@ const ECommerce: React.FC = () => {
           console.error('Error fetching data: ', error);
         });
   }, []);
-    const dateRangeRef = useRef(null);
+    const startDateRef = useRef(null);
+    const endDateRef = useRef(null);
 
     useEffect(() => {
         const now = new Date();
-
         // @ts-ignore
-        flatpickr(dateRangeRef.current, {
+        flatpickr(startDateRef.current, {
             enableTime: true,
             dateFormat: "d-m-Y H:i",
-            mode: "range",
+            maxDate: now,
+        });
+        // @ts-ignore
+        flatpickr(endDateRef.current, {
+            enableTime: true,
+            dateFormat: "d-m-Y H:i",
             maxDate: now,
         });
     }, []);
     const handleSubmit = () => {
         // @ts-ignore
-        const dateRange =   dateRangeRef.current.value;
+        const startDate = startDateRef.current.value;
+        // @ts-ignore
+        const endDate = endDateRef.current.value;
         fetch('/api/getTrafficDataByDate/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({dateRange}),
+            body: JSON.stringify({ startDate, endDate }),
             cache: 'no-cache',
         })
             .then(response => response.json())
             .then(data => {
+                console.log('yo');
                 console.log(data);
-                setTrafficData(data.totalCount);
-                setDataStream(data.streamOfData);
+                setTrafficData(data);
+                //setDataStream(data.streamOfData);
             })
             .catch(error => {
                 console.error('Error fetching data: ', error);
             });
+    };
+    const handleLiveUpdate = () => {
+        //add some live update logic here
     };
     return (
       <>
@@ -77,39 +91,73 @@ const ECommerce: React.FC = () => {
               </div>
               <div className="flex flex-col gap-5.5 p-6.5">
 
-                  <FlatpickrCustom dateRangeRef={dateRangeRef}/>
+                  <div>
+                      <label className="mb-3 block text-black dark:text-white">
+                          Set start and end date
+                      </label>
+                      <div className="relative">
+                          <input ref={startDateRef} placeholder="Start Date" className="custom-input-date custom-input-date-1 my-4 w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 font-medium outline-none transition focus:border-primary active:border-primary dark:border-form-strokedark dark:bg-form-input dark:focus:border-primary"/>
+                          <input ref={endDateRef} placeholder="End Date" className="custom-input-date custom-input-date-1 my-4 w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 font-medium outline-none transition focus:border-primary active:border-primary dark:border-form-strokedark dark:bg-form-input dark:focus:border-primary"/>
+                      </div>
+                  </div>
 
-                  <button
-                      className="max-w-xs rounded bg-primary py-2 px-4 text-white hover:bg-primary-dark"
-                      onClick={handleSubmit}
-                  >
-                      Submit
-                  </button>
+                  <div className="flex justify-start gap-3">
+
+                      <button
+                          className="max-w-xs rounded bg-primary py-2 px-4 text-white hover:bg-primary-dark"
+                          onClick={handleSubmit}
+                      >
+                          Submit
+                      </button>
+                      {/*
+                      <button
+                          className="max-w-xs rounded bg-danger py-2 px-4 text-white hover:bg-primary-dark"
+                          onClick={handleLiveUpdate}
+                      >
+                          Live update
+                      </button>
+                      */}
+                  </div>
+
               </div>
 
           </div>
           {/* <!-- Chat card --> */}
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-6 xl:grid-cols-4 2xl:gap-7.5">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-6 xl:grid-cols-3 2xl:gap-7.5">
+              <CardDataStats title="Total People" total={trafficData.totalPersons.toString()} rate=''>
+                  <IoMdPeople size={'2em'} color="#845EC2"/>
+              </CardDataStats>
+              <CardDataStats title="Total Bicycles" total={trafficData.totalBicycles.toString()} rate=''>
+                  <MdDirectionsBike size={'2em'} color="#D65DB1"/>
+              </CardDataStats>
               <CardDataStats title="Total Cars" total={trafficData.totalCars.toString()} rate=''>
-              <FaCar color="#3C50E0"/>
+                  <FaCar size={'2em'} color="#FF6F91"/>
               </CardDataStats>
-              <CardDataStats title="Total Motor Bikes" total={trafficData.totalMotorBikes.toString()} rate=''>
-                  <RiMotorbikeFill color="#80CAEE"/>
+              <CardDataStats title="Total Motorbikes" total={trafficData.totalMotorBikes.toString()} rate=''>
+                  <RiMotorbikeFill size={'2em'} color="#FF9671"/>
               </CardDataStats>
-              <CardDataStats title="Total Bikes" total={trafficData.totalBikes.toString()} rate=''>
-                  <MdDirectionsBike color="#10B981"/>
+              <CardDataStats title="Total Buses" total={trafficData.totalBus.toString()} rate=''>
+                  <FaBus size={'2em'} color="#FFC75F" />
               </CardDataStats>
-              <CardDataStats title="Total Pedestrians" total={trafficData.totalPedestrians.toString()} rate=''>
-                  <IoMdPeople color="#F0950C"/>
+              <CardDataStats title="Total Trucks" total={trafficData.totalTrucks.toString()} rate=''>
+                  <LiaTruckSolid size={'2em'} color="#FF8066"/>
               </CardDataStats>
           </div>
 
           <div className="mt-4 w-full">
+              {/*
               <ChartOne dataStream={dataStream}/>
+              */
+              }
               <br/>
-              <ChartThree/>
-
+              <ChartThree
+                  persons={trafficData.totalPersons}
+                  bicycles={trafficData.totalBicycles}
+                  cars={trafficData.totalCars}
+                  motorbikes={trafficData.totalMotorBikes}
+                  buses={trafficData.totalBus}
+                  trucks={trafficData.totalTrucks} />
           </div>
       </>
   );
