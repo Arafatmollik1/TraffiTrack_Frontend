@@ -76,9 +76,6 @@ const ECommerce: React.FC = () => {
                 console.error('Error fetching data: ', error);
             });
     };
-    const handleLiveUpdate = () => {
-        //add some live update logic here
-    };
     return (
         <>
             {/* <!-- Time and date --> */}
@@ -111,14 +108,6 @@ const ECommerce: React.FC = () => {
                         >
                             Submit
                         </button>
-                        {/*
-                      <button
-                          className="max-w-xs rounded bg-danger py-2 px-4 text-white hover:bg-primary-dark"
-                          onClick={handleLiveUpdate}
-                      >
-                          Live update
-                      </button>
-                      */}
                     </div>
 
                 </div>
@@ -148,10 +137,7 @@ const ECommerce: React.FC = () => {
             </div>
 
             <div className="mt-4 w-full">
-                {
-                    <ChartOne/>
-
-                }
+                {/*                <ChartOne/>*/}
                 <br/>
                 <ChartThree
                     persons={trafficData.totalPersons}
