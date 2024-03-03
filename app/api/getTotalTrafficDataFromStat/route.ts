@@ -4,27 +4,18 @@ export async function POST(req: Request) {
         [key: string]: string;
     };
 
+// Define a type for the aggregated data to ensure we have a fixed order
+    type AggregatedDataArray = number[];
+
+// Define a type for the API data structure
     type ApiData = {
         [timestamp: string]: {
             [classId: string]: number;
         };
     };
 
-    /*    type OutputData = {
-            [className: string]: {
-                data: number[];
-            };
-        };*/
-    type OutputData = {
-        [className: string]: {
-            data: Array<{
-                count: number;
-                timestamp: string;
-            }>;
-        };
-    };
-
-    const mapCountsToObject = (data: ApiData): OutputData => {
+// Function to map and sum counts by class, and return an array in a fixed order
+    const aggregateCountsToArray = (data: ApiData): AggregatedDataArray => {
         const classMapping: ClassMapping = {
             "0": "person",
             "1": "bicycle",
@@ -34,68 +25,72 @@ export async function POST(req: Request) {
             "5": "truck"
         };
 
-        const outputData: OutputData = {
-            "person": {data: []},
-            "bicycle": {data: []},
-            "car": {data: []},
-            "motorcycle": {data: []},
-            "bus": {data: []},
-            "truck": {data: []}
+        // Initialize an object to store aggregated counts
+        const aggregated: { [key: string]: number } = {
+            "person": 0,
+            "bicycle": 0,
+            "car": 0,
+            "motorcycle": 0,
+            "bus": 0,
+            "truck": 0
         };
 
-        Object.entries(data).forEach(([timestamp, counts]) => {
-            Object.entries(counts).forEach(([key, value]) => {
+        Object.values(data).forEach((curr) => {
+            Object.entries(curr).forEach(([key, value]) => {
                 const className = classMapping[key];
-                outputData[className].data.push({
-                    count: value,
-                    timestamp: timestamp
-                });
+                aggregated[className] += value;
             });
         });
 
-        return outputData;
+        // Return an array of the aggregated counts in the specified order
+        return [
+            aggregated["person"],
+            aggregated["bicycle"],
+            aggregated["car"],
+            aggregated["motorcycle"],
+            aggregated["bus"],
+            aggregated["truck"]
+        ];
     };
-
     try {
+        // Format the dates
         const fromTime = formatDate(startDate);
         const toTime = formatDate(endDate);
 
+        // Construct the API URL with query parameters
         const apiUrl = `http://127.0.0.1:5000/stat?from_time=${fromTime}&to_time=${toTime}`;
 
+        // Fetch data from the external API
         const response = await fetch(apiUrl, {
-            method: 'GET',
+            method: 'GET', // GET request does not need a body
             headers: {
                 'Content-Type': 'application/json',
             },
         });
 
+        // Check if the request was successful
         if (!response.ok) {
             throw new Error(`Error fetching data: ${response.statusText}`);
         }
 
+
         const data: ApiData = await response.json();
 
-        const outputData = mapCountsToObject(data);
-
-        console.log(outputData.person);
-
         // Aggregate the counts by class into an array
-//        const [totalPersons, totalBicycles, totalCars, totalMotorBikes, totalBus, totalTrucks] = aggregateCountsToArray(data);
-        /*
+        const [totalPersons, totalBicycles, totalCars, totalMotorBikes, totalBus, totalTrucks] = aggregateCountsToArray(data);
 
-                const result = {
-                    totalPersons,
-                    totalBicycles,
-                    totalCars,
-                    totalMotorBikes,
-                    totalBus,
-                    totalTrucks,
-                };
-        */
+        const result = {
+            totalPersons,
+            totalBicycles,
+            totalCars,
+            totalMotorBikes,
+            totalBus,
+            totalTrucks,
+        };
 
 
         // Return the parsed data as the response
-        return new Response(JSON.stringify(outputData), {
+        return new Response(JSON.stringify(result), {
             status: 200,
             headers: {
                 'Content-Type': 'application/json',

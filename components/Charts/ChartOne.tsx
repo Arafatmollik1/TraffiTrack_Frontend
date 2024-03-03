@@ -1,6 +1,6 @@
 "use client";
 import {ApexOptions} from "apexcharts";
-import React, {useState} from "react";
+import React, {useCallback, useEffect, useState} from "react";
 import dynamic from "next/dynamic";
 
 const ReactApexChart = dynamic(() => import("react-apexcharts"), {
@@ -94,20 +94,7 @@ const options: ApexOptions = {
     },
     xaxis: {
         type: "category",
-        categories: [
-            "Sep",
-            "Oct",
-            "Nov",
-            "Dec",
-            "Jan",
-            "Feb",
-            "Mar",
-            "Apr",
-            "May",
-            "Jun",
-            "Jul",
-            "Aug",
-        ],
+        categories: [],
         axisBorder: {
             show: false,
         },
@@ -122,62 +109,95 @@ const options: ApexOptions = {
             },
         },
         min: 0,
-        max: 100,
+        max: 5,
     },
 };
 
-interface ChartOneState {
-    series: {
-        name: string;
-        data: number[];
-    }[];
+
+interface TrafficData {
+    data: number[];
 }
 
-const initialSeries = [
-    {
-        "name": "persons",
-        "data": [30, 55, 36, 40, 25, 35, 64, 52, 59, 36, 39, 51]
-    },
-    {
-        "name": "bicycles",
-        "data": [35, 50, 40, 45, 30, 40, 69, 57, 64, 40, 43, 55]
-    },
-    {
-        "name": "cars",
-        "data": [40, 45, 50, 55, 35, 45, 74, 62, 69, 45, 48, 60]
-    },
-    {
-        "name": "motorbikes",
-        "data": [45, 40, 55, 60, 40, 50, 79, 67, 74, 50, 53, 65]
-    },
-    {
-        "name": "buses",
-        "data": [50, 35, 60, 65, 45, 55, 84, 72, 79, 55, 58, 70]
-    },
-    {
-        "name": "trucks",
-        "data": [55, 30, 65, 70, 50, 60, 89, 77, 84, 60, 63, 75]
-    }
-];
+/*interface TrafficDataStream {
+    [vehicleType: string]: TrafficData;
+}*/
+
+interface ChartOneProps {
+    trafficDataStream: TrafficDataStream | null;
+}
+
+interface TrafficDataPoint {
+    count: number;
+    timestamp: string; // Assuming timestamp is a string. Adjust if it's a Date object or another format.
+}
+
+interface TrafficDataStream {
+    [vehicleType: string]: {
+        data: TrafficDataPoint[];
+    };
+}
 
 
-const ChartOne: React.FC = () => {
-    const [activeSeries, setActiveSeries] = useState<string>("persons");
+const ChartOne: React.FC<ChartOneProps> = ({trafficDataStream}) => {
+    const [activeSeries, setActiveSeries] = useState<string>("person"); // Note the change to "person" to match your data keys
+    console.log(activeSeries);
+
+
     const getButtonClass = (seriesName: string) => {
         return `h-auto p-4 drop-shadow-lg rounded-lg ${activeSeries !== seriesName ? '' : 'bg-white text-black'}`;
     };
 
-    const getFilteredSeries = () => {
-        return initialSeries.filter((serie) => serie.name === activeSeries);
-    };
+    // This function now dynamically creates series data from the trafficDataStream prop
+    /*    const getFilteredSeries = useCallback(() => {
+            if (!trafficDataStream) {
+                return [];
+            }
+    
+            const activeData = trafficDataStream[activeSeries]; // Access the active series data using the activeSeries state
+            if (!activeData) {
+                return [];
+            }
+    
+            return [{
+                name: activeSeries,
+                data: activeData.data
+            }];
+        }, [trafficDataStream, activeSeries]);*/
+    const getFilteredSeries = useCallback(() => {
+        if (!trafficDataStream || !trafficDataStream[activeSeries]) {
+            return [];
+        }
 
-    /*    const handleReset = () => {
-            setState((prevState) => ({
-                ...prevState,
-            }));
-        };
+        const seriesData = trafficDataStream[activeSeries].data.map(dataPoint => ({
+            x: dataPoint.timestamp,
+            y: dataPoint.count
+        }));
 
-        handleReset;*/
+        return [{
+            name: activeSeries,
+            data: seriesData
+        }];
+    }, [trafficDataStream, activeSeries]);
+    const [chartOptions, setChartOptions] = useState<ApexOptions>(options); // Initialize chartOptions state with default options
+
+    useEffect(() => {
+        const maxCount = getFilteredSeries().reduce((max, series) => {
+            const seriesMax = series.data.reduce((seriesMax, point) => Math.max(seriesMax, point.y), 0);
+            return Math.max(max, seriesMax);
+        }, 0);
+
+        setChartOptions(prevOptions => ({
+            ...prevOptions,
+            xaxis: {
+                ...prevOptions.xaxis,
+                type: 'datetime', // Adjust if your timestamp format is different
+            },
+            yaxis: {
+                ...prevOptions.yaxis,
+                max: maxCount
+            },
+        }));
+    }, [getFilteredSeries]);
 
     // NextJS Requirement
     const isWindowAvailable = () => typeof window !== "undefined";
@@ -188,21 +208,21 @@ const ChartOne: React.FC = () => {
         <div
             className="col-span-12 rounded-sm border border-stroke bg-white px-5 pt-7.5 pb-5 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:col-span-8">
             <div className="w-1/2 flex gap-3 px-8">
-                <button className={getButtonClass("persons")} onClick={() => setActiveSeries("persons")}>Persons
+                <button className={getButtonClass("person")} onClick={() => setActiveSeries("person")}>Persons
                 </button>
-                <button className={getButtonClass("bicycles")} onClick={() => setActiveSeries("bicycles")}>Bicycles
+                <button className={getButtonClass("bicycle")} onClick={() => setActiveSeries("bicycle")}>Bicycles
                 </button>
-                <button className={getButtonClass("cars")} onClick={() => setActiveSeries("cars")}>Cars</button>
-                <button className={getButtonClass("motorbikes")}
-                        onClick={() => setActiveSeries("motorbikes")}>Motorbikes
+                <button className={getButtonClass("car")} onClick={() => setActiveSeries("car")}>Cars</button>
+                <button className={getButtonClass("motorcycle")}
+                        onClick={() => setActiveSeries("motorcycle")}>Motorbikes
                 </button>
-                <button className={getButtonClass("buses")} onClick={() => setActiveSeries("buses")}>Buses</button>
-                <button className={getButtonClass("trucks")} onClick={() => setActiveSeries("trucks")}>Trucks</button>
+                <button className={getButtonClass("bus")} onClick={() => setActiveSeries("bus")}>Buses</button>
+                <button className={getButtonClass("truck")} onClick={() => setActiveSeries("truck")}>Trucks</button>
             </div>
 
             <div id="chartOne" className="h-96">
                 <ReactApexChart
-                    options={options}
+                    options={chartOptions}
                     series={getFilteredSeries()}
                     type="area"
                     width="100%"
