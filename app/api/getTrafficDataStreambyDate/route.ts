@@ -77,7 +77,7 @@ export async function POST(req: Request) {
 
         const outputData = mapCountsToObject(data);
 
-        console.log(outputData.person);
+        //console.log(outputData.person);
 
         // Aggregate the counts by class into an array
 //        const [totalPersons, totalBicycles, totalCars, totalMotorBikes, totalBus, totalTrucks] = aggregateCountsToArray(data);

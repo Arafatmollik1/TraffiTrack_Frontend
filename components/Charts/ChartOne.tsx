@@ -140,7 +140,7 @@ interface TrafficDataStream {
 
 const ChartOne: React.FC<ChartOneProps> = ({trafficDataStream}) => {
     const [activeSeries, setActiveSeries] = useState<string>("person"); // Note the change to "person" to match your data keys
-    console.log(activeSeries);
+    //console.log(activeSeries);
 
 
     const getButtonClass = (seriesName: string) => {
