@@ -126,7 +126,7 @@ const ECommerce: React.FC = () => {
             </div>
             {/* <!-- Chat card --> */}
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-6 xl:grid-cols-3 2xl:gap-7.5">
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 md:gap-6 xl:grid-cols-3 2xl:gap-7.5">
                 <CardDataStats title="Total People" total={trafficData.totalPersons.toString()} rate=''>
                     <IoMdPeople size={'2em'} color="#845EC2"/>
                 </CardDataStats>
