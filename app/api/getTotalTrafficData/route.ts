@@ -1,12 +1,13 @@
 export async function GET() {
     try {
-            const apiUrl = 'http://127.0.0.1:5000/count';
+        const apiUrl = 'http://127.0.0.1:5000/count';
 
         const response = await fetch(apiUrl, {
             method: 'GET',
             headers: {
                 // If the API requires specific headers, add them here
                 'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache',
             },
         });
 
@@ -17,10 +18,10 @@ export async function GET() {
 
         // Parse the JSON response
         const data = await response.json();
+        console.log(data);
 
         // Destructure the response data into named variables
         const [totalPersons, totalBicycles, totalCars, totalMotorBikes, totalBus, totalTrucks] = Object.values(data);
-
 
 
         // Return the results in a modern object shorthand notation
@@ -45,7 +46,7 @@ export async function GET() {
         console.error('Fetch error:', error);
 
         // Return an error response
-        return new Response(JSON.stringify({ error: 'Failed to fetch data' }), {
+        return new Response(JSON.stringify({error: 'Failed to fetch data'}), {
             status: 500, // Internal Server Error status
             headers: {
                 'Content-Type': 'application/json',

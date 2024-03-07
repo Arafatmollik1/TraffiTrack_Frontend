@@ -13,8 +13,8 @@ const options: ApexOptions = {
     chart: {
         type: "donut",
     },
-    colors: ["#845EC2", "#D65DB1", "#FF6F91", "#FF9671", "#FFC75F", "#FFBA00"],
-    labels: ["Persons", "Bicycles", "Cars", "Motorbikes", "Buses", "Trucks"],
+    colors: ["#FF9A2F", "#FF7A07", "#F95D00", "#C04000"],
+    labels: ["Cars", "Motorbikes", "Buses", "Trucks"],
     legend: {
         show: true,
         position: "bottom",
@@ -50,26 +50,25 @@ const options: ApexOptions = {
     ],
 };
 
-interface ChartThreeProps {
+interface ChartThreeV2Props {
     text: string;
-    persons: number;
-    bicycles: number;
     cars: number;
     motorbikes: number;
     buses: number;
     trucks: number;
+    totalCarbon: number;
 }
 
-const ChartThree: React.FC<ChartThreeProps> = ({text, persons, bicycles, cars, motorbikes, buses, trucks}) => {
+const ChartThreeV2: React.FC<ChartThreeV2Props> = ({text, totalCarbon, cars, motorbikes, buses, trucks}) => {
     // Update the initial state to include all categories
     const [state, setState] = useState<ChartThreeState>({
-        series: [persons, bicycles, cars, motorbikes, buses, trucks], //  numbers for Persons, Bicycles, Cars, Motorbikes, Buses, Trucks
+        series: [cars, motorbikes, buses, trucks], //  numbers for Persons, Bicycles, Cars, Motorbikes, Buses, Trucks
     });
 
     useEffect(() => {
         // Update state whenever props change
-        setState({series: [persons, bicycles, cars, motorbikes, buses, trucks]});
-    }, [persons, bicycles, cars, motorbikes, buses, trucks]);
+        setState({series: [cars, motorbikes, buses, trucks]});
+    }, [cars, motorbikes, buses, trucks]);
 
     return (
         <div
@@ -81,7 +80,7 @@ const ChartThree: React.FC<ChartThreeProps> = ({text, persons, bicycles, cars, m
                     </h5>
                 </div>
                 <p className="text-black dark:text-white">
-                    Total instance count: {persons + bicycles + cars + motorbikes + buses + trucks}
+                    Total Carbon: {totalCarbon} Tonnes
                 </p>
             </div>
 
@@ -98,4 +97,4 @@ const ChartThree: React.FC<ChartThreeProps> = ({text, persons, bicycles, cars, m
     );
 };
 
-export default ChartThree;
+export default ChartThreeV2;

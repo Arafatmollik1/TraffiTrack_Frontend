@@ -13,6 +13,7 @@ import {LiaTruckSolid} from "react-icons/lia";
 import {IoMdPeople} from "react-icons/io";
 import flatpickr from "flatpickr";
 import {initialEnv} from "@next/env";
+import ChartThreeV2 from "@/components/Charts/ChartThreeV2";
 
 
 const ECommerce: React.FC = () => {
@@ -23,6 +24,15 @@ const ECommerce: React.FC = () => {
         totalMotorBikes: 0,
         totalBus: 0,
         totalTrucks: 0,
+    });
+    const [trafficEmissionData, setTrafficEmissionData] = useState({
+        totalPersonsEmissions: 0,
+        totalBicyclesEmissions: 0,
+        totalCarsEmissions: 0,
+        totalMotorBikesEmissions: 0,
+        totalBusEmissions: 0,
+        totalTrucksEmissions: 0,
+        totalEmissions: 0
     });
     const [trafficDataStream, setTrafficDataStream] = useState(null);
 
@@ -62,10 +72,11 @@ const ECommerce: React.FC = () => {
         const endDate = endDateRef.current.value;
 
         // First API call to getTrafficDataByDate
-        fetch('/api/getTotalTrafficDataFromStat/', {
+        fetch('/api/getTrafficDataByDate/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache',
             },
             body: JSON.stringify({startDate, endDate}),
             cache: 'no-cache',
@@ -79,11 +90,30 @@ const ECommerce: React.FC = () => {
                 console.error('Error fetching traffic data: ', error);
             });
 
+        fetch('/api/getTrafficEmissionDataByDate/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache',
+            },
+            body: JSON.stringify({startDate, endDate}),
+            cache: 'no-cache',
+        })
+            .then(response => response.json())
+            .then(data => {
+                setTrafficEmissionData(data);
+            })
+            .catch(error => {
+                console.error('Error fetching traffic data: ', error);
+            });
+
+
         // Second API call to getTrafficDataStreambyDate
         fetch('/api/getTrafficDataStreambyDate/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache',
             },
             body: JSON.stringify({startDate, endDate}),
             cache: 'no-cache',
@@ -163,12 +193,21 @@ const ECommerce: React.FC = () => {
 
                 <br/>
                 <ChartThree
+                    text={'Total Traffic Count'}
                     persons={trafficData.totalPersons}
                     bicycles={trafficData.totalBicycles}
                     cars={trafficData.totalCars}
                     motorbikes={trafficData.totalMotorBikes}
                     buses={trafficData.totalBus}
-                    trucks={trafficData.totalTrucks}/>
+                    trucks={trafficData.totalTrucks}
+                />
+                <ChartThreeV2 text={'Total Traffic Emission'}
+                              totalCarbon={trafficEmissionData.totalEmissions}
+                              cars={trafficEmissionData.totalCarsEmissions}
+                              motorbikes={trafficEmissionData.totalMotorBikesEmissions}
+                              buses={trafficEmissionData.totalBusEmissions}
+                              trucks={trafficEmissionData.totalTrucksEmissions}
+                />
             </div>
         </>
     );
